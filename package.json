@@ -1,0 +1,14 @@
+{
+  "name": "meetbox-chrome",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bundle.js",
+  "private": true,
+  "scripts": {
+    "build": "browserify lib/main.js > bundle.js",
+    "dev": "beefy lib/main.js:bundle.js --live",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ole Michelsen",
+  "license": "MIT"
+}

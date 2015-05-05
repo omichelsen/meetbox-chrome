@@ -1,0 +1,18 @@
+{
+  "manifest_version": 2,
+
+  "name": "Meetbox",
+  "description": "This extension allows Chrome to act as a Meetbox client.",
+  "version": "1.0",
+  "chrome_url_overrides" : {
+    "newtab": "index.html"
+  },
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "activeTab",
+    "https://ajax.googleapis.com/"
+  ]
+}
