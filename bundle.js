@@ -72,12 +72,20 @@ function leave() {
 
 start();
 
+setTimeout(function () {
 
-var socket = io.connect('http://meetbox.ngrok.io');
-socket.on('join/LENNON', function (data) {
-    console.log('socket rocket', data);
-    join(data.url);
-});
+    chrome.runtime.sendMessage({url: 'https://next.g2m.me/lenin'}, function(response) {
+        // console.log(response.farewell);
+        console.log('event msg response', response);
+    });
+
+}, 3000);
+
+// var socket = io.connect('http://meetbox.ngrok.io');
+// socket.on('join/LENNON', function (data) {
+//     console.log('socket rocket', data);
+//     join(data.url);
+// });
 
 
 },{"socket.io-client":2,"sonicnet.js":52}],2:[function(require,module,exports){
