@@ -1,10 +1,8 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var SonicSocket = require('../node_modules/sonicnet.js/lib/sonic-socket.js');
-var SonicServer = require('../node_modules/sonicnet.js/lib/sonic-server.js');
-var SonicCoder = require('../node_modules/sonicnet.js/lib/sonic-coder.js');
+var Sonic = require('../node_modules/sonicnet.js/lib/main');
 
-var ALPHABET = '0123456789';
-var MESSAGE = '12345';
+var ALPHABET = '01elno';
+var MESSAGE = '0lennon';
 
 var ticker;
 
@@ -28,15 +26,60 @@ function stop() {
 function listen() {
     var sserver = new Sonic.SonicServer({alphabet: ALPHABET});
     sserver.on('message', function(message) {
-        console.log(message);
+        console.log('message', message);
+        if (/1[elno]+/i.test(message)) {
+	        var sessionUrl = 'https://next.g2m.me/' + message.substr(1);
+	        console.log('joining', sessionUrl);
+        	join(sessionUrl);
+        }
     });
     sserver.start();
     console.log('listening', ALPHABET);
-};
+}
 
-var btn = document.getElementById('start');
-btn.addEventListener('click', start);
-},{"../node_modules/sonicnet.js/lib/sonic-coder.js":3,"../node_modules/sonicnet.js/lib/sonic-server.js":4,"../node_modules/sonicnet.js/lib/sonic-socket.js":5}],2:[function(require,module,exports){
+var tabId;
+
+function join(sessionUrl) {
+	sessionUrl = sessionUrl || 'https://next.g2m.me/lennon';
+	chrome.tabs.create({url: sessionUrl}, function (tab) {
+		console.log('tab details', tab);
+		tabId = tab.id;
+	});
+
+	chrome.tabs.onUpdated.addListener(function (id, info, tab) {
+		// Only react to tabs we have created (url sometimes changes to undefined so only listen for real URLs)
+		if (tabId === id && info.url && info.url !== sessionUrl) {
+			console.log('url changed to', info.url);
+			chrome.tabs.onUpdated.removeListener();
+			leave();
+		}
+	});
+}
+
+function leave() {
+	chrome.tabs.remove(tabId, function () {
+		console.log('tab closed');
+	});
+}
+
+var btnStart = document.getElementById('start');
+btnStart.addEventListener('click', start);
+
+var btnJoin = document.getElementById('join');
+btnJoin.addEventListener('click', join);
+
+},{"../node_modules/sonicnet.js/lib/main":2}],2:[function(require,module,exports){
+var SonicSocket = require('./sonic-socket.js');
+var SonicServer = require('./sonic-server.js');
+var SonicCoder = require('./sonic-coder.js');
+
+module.exports = {
+  SonicSocket: SonicSocket,
+  SonicServer: SonicServer,
+  SonicCoder: SonicCoder
+}
+
+},{"./sonic-coder.js":4,"./sonic-server.js":5,"./sonic-socket.js":6}],3:[function(require,module,exports){
 function RingBuffer(maxLength) {
   this.array = [];
   this.maxLength = maxLength;
@@ -87,7 +130,7 @@ RingBuffer.prototype.remove = function(index, length) {
 
 module.exports = RingBuffer;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 /**
  * A simple sonic encoder/decoder for [a-z0-9] => frequency (and back).
  * A way of representing characters with frequency.
@@ -150,7 +193,7 @@ SonicCoder.prototype.freqToChar = function(freq) {
 
 module.exports = SonicCoder;
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var RingBuffer = require('./ring-buffer.js');
 var SonicCoder = require('./sonic-coder.js');
 
@@ -442,7 +485,7 @@ SonicServer.prototype.restart = function() {
 
 module.exports = SonicServer;
 
-},{"./ring-buffer.js":2,"./sonic-coder.js":3}],5:[function(require,module,exports){
+},{"./ring-buffer.js":3,"./sonic-coder.js":4}],6:[function(require,module,exports){
 var SonicCoder = require('./sonic-coder.js');
 
 var audioContext = window.audioContext || new AudioContext();
@@ -504,4 +547,4 @@ SonicSocket.prototype.scheduleToneAt = function(freq, startTime, duration) {
 
 module.exports = SonicSocket;
 
-},{"./sonic-coder.js":3}]},{},[1]);
+},{"./sonic-coder.js":4}]},{},[1]);
