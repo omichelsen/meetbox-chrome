@@ -40,7 +40,6 @@ function listen() {
 var tabId;
 
 function join(sessionUrl) {
-	sessionUrl = sessionUrl || 'https://next.g2m.me/lennon';
 	chrome.tabs.create({url: sessionUrl}, function (tab) {
 		console.log('tab details', tab);
 		tabId = tab.id;
@@ -66,7 +65,9 @@ var btnStart = document.getElementById('start');
 btnStart.addEventListener('click', start);
 
 var btnJoin = document.getElementById('join');
-btnJoin.addEventListener('click', join);
+btnJoin.addEventListener('click', function () {
+	join('https://next.g2m.me/lennon');
+});
 
 },{"../node_modules/sonicnet.js/lib/main":2}],2:[function(require,module,exports){
 var SonicSocket = require('./sonic-socket.js');
