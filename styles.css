@@ -1,3 +1,13 @@
 body {
 	background: purple;
+	color: #fff;
+	font-family: HelveticaNeue-Medium, 'Helvetica Neue Medium', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+h1 {
+	font-size: 54px;
+}
+
+h2 {
+	font-weight: normal;
 }
