@@ -4,7 +4,7 @@ var Sonic = require('../node_modules/sonicnet.js/lib/main');
 var ALPHABET = '01elno';
 var MESSAGE = '0lennon';
 
-var ticker;
+var ticker, listener;
 
 function send() {
     var ssocket = new Sonic.SonicSocket({alphabet: ALPHABET, charDuration: 0.2});
@@ -15,31 +15,38 @@ function send() {
 function start() {
 	console.log('start interval');
 	send();
-    ticker = setInterval(send, 1000 * 5);
+    ticker = setInterval(send, 1000 * 30);
+    listen();
 }
 
 function stop() {
 	console.log('stop interval');
     clearInterval(ticker);
+    listener.stop();
 }
 
 function listen() {
-    var sserver = new Sonic.SonicServer({alphabet: ALPHABET});
-    sserver.on('message', function(message) {
+    listener = new Sonic.SonicServer({alphabet: ALPHABET});
+    listener.on('message', function(message) {
         console.log('message', message);
         if (/1[elno]+/i.test(message)) {
-	        var sessionUrl = 'https://next.g2m.me/' + message.substr(1);
+	        // var sessionUrl = 'https://next.g2m.me/' + message.substr(1);
+	        var sessionUrl = 'https://dev.g2m.me:8243/' + message.substr(1);
 	        console.log('joining', sessionUrl);
         	join(sessionUrl);
         }
     });
-    sserver.start();
+    listener.start();
     console.log('listening', ALPHABET);
 }
 
 var tabId;
 
 function join(sessionUrl) {
+	// stop broadcasting and listening
+	stop();
+
+	// start session in new tab
 	chrome.tabs.create({url: sessionUrl}, function (tab) {
 		console.log('tab details', tab);
 		tabId = tab.id;
@@ -58,6 +65,7 @@ function join(sessionUrl) {
 function leave() {
 	chrome.tabs.remove(tabId, function () {
 		console.log('tab closed');
+		start();
 	});
 }
 
