@@ -1,6 +1,9 @@
 body {
-	background: purple;
-	color: #fff;
+	padding: 3em 5em;
+	background-image: url(bg.jpg);
+	background-repeat: no-repeat;
+	background-size: cover;
+	color: #000;
 	font-family: HelveticaNeue-Medium, 'Helvetica Neue Medium', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 

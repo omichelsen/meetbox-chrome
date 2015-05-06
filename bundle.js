@@ -1,10 +1,10 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var Sonic = require('../node_modules/sonicnet.js/lib/main');
 
-var ALPHABET = '01elno';
-var MESSAGE = '0lennon';
+var ALPHABET = '01eilno';
+var MESSAGE = '0lenin';
 
-var ticker, listener;
+var sender, listener;
 
 function send() {
     var ssocket = new Sonic.SonicSocket({alphabet: ALPHABET, charDuration: 0.2});
@@ -15,13 +15,13 @@ function send() {
 function start() {
 	console.log('start interval');
 	send();
-    ticker = setInterval(send, 1000 * 30);
+    sender = setInterval(send, 1000 * 30);
     listen();
 }
 
 function stop() {
 	console.log('stop interval');
-    clearInterval(ticker);
+    clearInterval(sender);
     listener.stop();
 }
 
@@ -74,7 +74,7 @@ btnStart.addEventListener('click', start);
 
 var btnJoin = document.getElementById('join');
 btnJoin.addEventListener('click', function () {
-	join('https://next.g2m.me/lennon');
+	join('https://next.g2m.me/lenin');
 });
 
 },{"../node_modules/sonicnet.js/lib/main":2}],2:[function(require,module,exports){
