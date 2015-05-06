@@ -1,4 +1,42 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var SonicSocket = require('../node_modules/sonicnet.js/lib/sonic-socket.js');
+var SonicServer = require('../node_modules/sonicnet.js/lib/sonic-server.js');
+var SonicCoder = require('../node_modules/sonicnet.js/lib/sonic-coder.js');
+
+var ALPHABET = '0123456789';
+var MESSAGE = '12345';
+
+var ticker;
+
+function send() {
+    var ssocket = new Sonic.SonicSocket({alphabet: ALPHABET, charDuration: 0.2});
+    ssocket.send(MESSAGE);
+    console.log('sending', MESSAGE);
+}
+
+function start() {
+	console.log('start interval');
+	send();
+    ticker = setInterval(send, 1000 * 5);
+}
+
+function stop() {
+	console.log('stop interval');
+    clearInterval(ticker);
+}
+
+function listen() {
+    var sserver = new Sonic.SonicServer({alphabet: ALPHABET});
+    sserver.on('message', function(message) {
+        console.log(message);
+    });
+    sserver.start();
+    console.log('listening', ALPHABET);
+};
+
+var btn = document.getElementById('start');
+btn.addEventListener('click', start);
+},{"../node_modules/sonicnet.js/lib/sonic-coder.js":3,"../node_modules/sonicnet.js/lib/sonic-server.js":4,"../node_modules/sonicnet.js/lib/sonic-socket.js":5}],2:[function(require,module,exports){
 function RingBuffer(maxLength) {
   this.array = [];
   this.maxLength = maxLength;
@@ -49,7 +87,7 @@ RingBuffer.prototype.remove = function(index, length) {
 
 module.exports = RingBuffer;
 
-},{}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 /**
  * A simple sonic encoder/decoder for [a-z0-9] => frequency (and back).
  * A way of representing characters with frequency.
@@ -112,11 +150,11 @@ SonicCoder.prototype.freqToChar = function(freq) {
 
 module.exports = SonicCoder;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var RingBuffer = require('./ring-buffer.js');
 var SonicCoder = require('./sonic-coder.js');
 
-var audioContext = window.audioContext || new webkitAudioContext();
+var audioContext = window.audioContext || new AudioContext();
 /**
  * Extracts meaning from audio streams.
  *
@@ -404,10 +442,10 @@ SonicServer.prototype.restart = function() {
 
 module.exports = SonicServer;
 
-},{"./ring-buffer.js":1,"./sonic-coder.js":2}],4:[function(require,module,exports){
+},{"./ring-buffer.js":2,"./sonic-coder.js":3}],5:[function(require,module,exports){
 var SonicCoder = require('./sonic-coder.js');
 
-var audioContext = window.audioContext || new webkitAudioContext();
+var audioContext = window.audioContext || new AudioContext();
 
 /**
  * Encodes text as audio streams.
@@ -466,42 +504,4 @@ SonicSocket.prototype.scheduleToneAt = function(freq, startTime, duration) {
 
 module.exports = SonicSocket;
 
-},{"./sonic-coder.js":2}],5:[function(require,module,exports){
-var SonicSocket = require('../bower_components/sonicnet.js/lib/sonic-socket.js');
-var SonicServer = require('../bower_components/sonicnet.js/lib/sonic-server.js');
-var SonicCoder = require('../bower_components/sonicnet.js/lib/sonic-coder.js');
-
-var ALPHABET = '0123456789';
-var MESSAGE = '12345';
-
-var ticker;
-
-function send() {
-    var ssocket = new Sonic.SonicSocket({alphabet: ALPHABET, charDuration: 0.2});
-    ssocket.send(MESSAGE);
-    console.log('sending', MESSAGE);
-}
-
-function start() {
-	console.log('start interval');
-	send();
-    ticker = setInterval(send, 1000 * 5);
-}
-
-function stop() {
-	console.log('stop interval');
-    clearInterval(ticker);
-}
-
-function listen() {
-    var sserver = new Sonic.SonicServer({alphabet: ALPHABET});
-    sserver.on('message', function(message) {
-        console.log(message);
-    });
-    sserver.start();
-    console.log('listening', ALPHABET);
-};
-
-var btn = document.getElementById('start');
-btn.addEventListener('click', start);
-},{"../bower_components/sonicnet.js/lib/sonic-coder.js":2,"../bower_components/sonicnet.js/lib/sonic-server.js":3,"../bower_components/sonicnet.js/lib/sonic-socket.js":4}]},{},[5]);
+},{"./sonic-coder.js":3}]},{},[1]);

@@ -9,6 +9,9 @@
     "dev": "beefy lib/main.js:bundle.js --live",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "dependencies": {
+    "sonicnet.js": "omichelsen/sonicnet.js"
+  },
   "author": "Ole Michelsen",
   "license": "MIT"
 }
