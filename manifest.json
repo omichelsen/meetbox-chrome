@@ -21,6 +21,7 @@
     "tabs",
     "webNavigation",
     "https://*.g2m.me/*",
-    "https://*.gotomeeting.com/*"
+    "https://*.gotomeeting.com/*",
+    "cookies"
   ]
 }

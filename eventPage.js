@@ -9,6 +9,11 @@ chrome.browserAction.onClicked.addListener(function () {
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 	console.log(sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
 	if (sender.tab && request.url) {
+		chrome.cookies.set({
+			url: 'https://next.g2m.me/',
+			name: 'meetbox',
+			value: 'lenin'
+		});
 		chrome.tabs.update(sender.tab.id, request, function (tab) {
 			console.log('event page update done', tab);
 		});
