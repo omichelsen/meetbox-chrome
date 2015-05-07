@@ -19,11 +19,13 @@ function join(sessionUrl) {
 
 // setTimeout(function () {join('https://next.g2m.me/lenin')}, 5000);
 
-// var socket = io.connect('http://meetbox.ngrok.io');
-// socket.on('join/LENNON', function (data) {
-//     console.log('socket rocket', data);
-//     join(data.url);
-// });
+
+// Server notifications
+var socket = io.connect('http://meetbox.ngrok.io');
+socket.on('join/LENNON', function (data) {
+    console.log('socket rocket', data);
+    join(data.url);
+});
 
 
 // UI
@@ -37,7 +39,7 @@ var elmDefault = document.getElementById('state-default'),
 setInterval(function () {
     elmDefault.classList.toggle('hide');
     elmProximity.classList.toggle('hide');
-}, 2000);
+}, 5000);
 
 },{"./ultraserver":2,"moment":3,"socket.io-client":4}],2:[function(require,module,exports){
 var Sonic = require('sonicnet.js');
