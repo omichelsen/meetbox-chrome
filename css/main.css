@@ -144,10 +144,15 @@ span {
 }
 
 #meeting-users img {
+    padding-left: 10px;
     border-radius: 100%;
     width: 80px;
     height: 80px;
     vertical-align: baseline;
+}
+
+#meeting-users img:first-child {
+    padding-left: 0;
 }
 
 
