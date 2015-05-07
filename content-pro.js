@@ -1,5 +1,6 @@
 console.log('content-pro.js loaded', window.location.href);
 
+// Insert name from hash
 setTimeout(function () {
 	console.log('content-pro.js setting name', location.hash);
 	var elmJoinName = document.getElementById('join-name'),
@@ -17,7 +18,7 @@ setTimeout(function () {
 	}
 }, 3000);
 
-
+// Leave if end dialog is shown
 setInterval(function () {
 	console.log('content-pro.js watch url', window.location.href);
 	var elmLeaveBtn = document.getElementById('button-leave-meeting');
