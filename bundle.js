@@ -12,10 +12,6 @@ function join(sessionUrl) {
     });
 }
 
-// ultraserver.start(join);
-
-// setTimeout(function () {join('https://next.g2m.me/lenin')}, 5000);
-
 // UI
 var elmTime = document.getElementById('time'),
     elmDefault = document.getElementById('state-default'),
@@ -60,13 +56,15 @@ function addUser(user) {
 
 function removeUser(user) {
     delete present[user.profile.user_id];
+    elmMeetingUser.textContent = getNamesFromPresent().join(', ');
     var elmUser = document.getElementById('u' + user.profile.user_id);
     if (elmUser) elmMeetingUsers.removeChild(elmUser);
 }
 
 function setMeetingCountdown(date) {
+    clearInterval(countdownTicker);
     countdownTicker = setInterval(function () {
-        elmMeetingCountdown.textContent = moment(date).from(Date.now());
+        elmMeetingCountdown.textContent = moment.utc(date).from(Date.now());
     }, 1000);
 }
 
@@ -91,6 +89,10 @@ function setPresence(info) {
         elmMeeting.classList.add('hide');
     }
 }
+
+
+// Ultra sonic broadcasting & listening
+ultraserver.start(join);
 
 
 // Server notifications
