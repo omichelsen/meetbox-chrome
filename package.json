@@ -6,13 +6,17 @@
   "private": true,
   "scripts": {
     "build": "browserify lib/main.js > bundle.js",
+    "dist": "browserify lib/main.js > bundle.js && copyfiles *.js *.json *.ico *.html css/* img/* dist",
     "dev": "beefy lib/main.js:bundle.js --live",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "author": "Ole Michelsen",
+  "license": "MIT",
   "dependencies": {
     "socket.io-client": "^1.3.5",
     "sonicnet.js": "omichelsen/sonicnet.js"
   },
-  "author": "Ole Michelsen",
-  "license": "MIT"
+  "devDependencies": {
+    "copyfiles": "^0.2.1"
+  }
 }
