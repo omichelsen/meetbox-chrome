@@ -139,13 +139,10 @@ span {
 text-shadow: 0px 0px 20px rgba(0, 0, 0, 1);
 }
 
-.default-state {
+.hide {
     display: none;
 }
 
-.proximity-state {
-    display: normal;
-}
 
 /*bottom*/
 
