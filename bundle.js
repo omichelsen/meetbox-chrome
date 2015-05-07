@@ -47,11 +47,16 @@ function join(sessionUrl) {
     // stop broadcasting and listening
     stop();
 
-    // start session in new tab
-    chrome.tabs.create({url: sessionUrl}, function (tab) {
-        console.log('tab details', tab);
-        tabId = tab.id;
+    // message the event page to start a session
+    chrome.runtime.sendMessage({url: 'https://next.g2m.me/lenin'}, function(response) {
+        console.log('event msg response', response);
     });
+
+    // start session in new tab
+    // chrome.tabs.create({url: sessionUrl}, function (tab) {
+    //     console.log('tab details', tab);
+    //     tabId = tab.id;
+    // });
 
     chrome.tabs.onUpdated.addListener(function (id, info, tab) {
         // Only react to tabs we have created (url sometimes changes to undefined so only listen for real URLs)
@@ -72,14 +77,7 @@ function leave() {
 
 start();
 
-setTimeout(function () {
-
-    chrome.runtime.sendMessage({url: 'https://next.g2m.me/lenin'}, function(response) {
-        // console.log(response.farewell);
-        console.log('event msg response', response);
-    });
-
-}, 3000);
+// setTimeout(join, 5000);
 
 // var socket = io.connect('http://meetbox.ngrok.io');
 // socket.on('join/LENNON', function (data) {

@@ -9,7 +9,7 @@
   },
   "background": {
     "scripts": ["eventPage.js"],
-    "persitant": true
+    "persitant": false
   },
   "browser_action": {
     "default_icon": "icon.png",
@@ -20,6 +20,7 @@
     "https://ajax.googleapis.com/",
     "tabs",
     "webNavigation",
-    "https://next.g2m.me/*"
+    "https://*.g2m.me/*",
+    "https://*.gotomeeting.com/*"
   ]
 }
