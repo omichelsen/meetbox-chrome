@@ -91,6 +91,10 @@ span {
     color: #CFDF77;
 }
 
+span.normal {
+    color: #fff;
+}
+
 /*top*/
 
 .top {
