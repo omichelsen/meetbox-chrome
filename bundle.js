@@ -2,6 +2,9 @@
 var io = require('socket.io-client');
 var moment = require('moment');
 var ultraserver = require('./ultraserver');
+var screenfull = require('screenfull');
+
+var expirationTime = 20;
 
 function join(sessionUrl) {
     console.log('join', sessionUrl);
@@ -21,6 +24,7 @@ var elmTime = document.getElementById('time'),
     elmMeetingUsers = document.getElementById('meeting-users'),
     elmMeetingName = document.getElementById('meeting-name'),
     elmMeetingCountdown = document.getElementById('meeting-countdown'),
+    elmStartsIn = document.getElementById('starts-in'),
     present = {},
     names = [],
     countdownTicker;
@@ -41,12 +45,29 @@ function getNamesFromPresent() {
     return names;
 }
 
+setInterval(kickPeopleOut, 2000);
+
+function kickPeopleOut() {
+    for (var userKey in present){
+        if (present.hasOwnProperty(userKey) && present[userKey].expires.isBefore(moment())){
+            removeUser(present[userKey]);
+        }
+    }
+    refreshView();
+}
+
 function addUser(user) {
-    if (present.hasOwnProperty(user.profile.user_id)) return;
+    if (present.hasOwnProperty(user.profile.user_id)) {
+        present[user.profile.user_id].expires = moment().add(expirationTime, 'seconds');
+        return;
+    }
 
     present[user.profile.user_id] = user;
+    present[user.profile.user_id].expires = moment().add(expirationTime, 'seconds');
 
     elmMeetingUser.textContent = getNamesFromPresent().join(', ');
+
+
 
     var elmUser = document.createElement('img');
     elmUser.id = 'u' + user.profile.user_id;
@@ -64,6 +85,7 @@ function removeUser(user) {
 function setMeetingCountdown(date) {
     clearInterval(countdownTicker);
     countdownTicker = setInterval(function () {
+        elmStartsIn.textContent = moment.utc(date).isBefore(moment.utc()) ? "started" : "is starting"
         elmMeetingCountdown.textContent = moment.utc(date).from(Date.now());
     }, 1000);
 }
@@ -81,6 +103,10 @@ function setPresence(info) {
         addUser(info.user);
     }
 
+    refreshView();
+}
+
+function refreshView() {
     elmDefault.classList.toggle('hide', elmMeetingUsers.childElementCount > 0);
     elmProximity.classList.toggle('hide', elmMeetingUsers.childElementCount === 0);
 
@@ -113,7 +139,13 @@ socket.on('presence/LENNON', function (data) {
 });
 
 
-},{"./ultraserver":2,"moment":3,"socket.io-client":4}],2:[function(require,module,exports){
+document.addEventListener('click', function () {
+    if (screenfull.enabled) {
+        screenfull.request();
+    }
+});
+
+},{"./ultraserver":2,"moment":3,"screenfull":4,"socket.io-client":5}],2:[function(require,module,exports){
 var Sonic = require('sonicnet.js');
 
 var ALPHABET = '01eilno';
@@ -159,7 +191,7 @@ module.exports = {
     start: start,
     stop: stop
 };
-},{"sonicnet.js":54}],3:[function(require,module,exports){
+},{"sonicnet.js":55}],3:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.2
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -3244,10 +3276,157 @@ module.exports = {
 
 }));
 },{}],4:[function(require,module,exports){
+/*!
+* screenfull
+* v2.0.0 - 2014-12-22
+* (c) Sindre Sorhus; MIT License
+*/
+(function () {
+	'use strict';
+
+	var isCommonjs = typeof module !== 'undefined' && module.exports;
+	var keyboardAllowed = typeof Element !== 'undefined' && 'ALLOW_KEYBOARD_INPUT' in Element;
+
+	var fn = (function () {
+		var val;
+		var valLength;
+
+		var fnMap = [
+			[
+				'requestFullscreen',
+				'exitFullscreen',
+				'fullscreenElement',
+				'fullscreenEnabled',
+				'fullscreenchange',
+				'fullscreenerror'
+			],
+			// new WebKit
+			[
+				'webkitRequestFullscreen',
+				'webkitExitFullscreen',
+				'webkitFullscreenElement',
+				'webkitFullscreenEnabled',
+				'webkitfullscreenchange',
+				'webkitfullscreenerror'
+
+			],
+			// old WebKit (Safari 5.1)
+			[
+				'webkitRequestFullScreen',
+				'webkitCancelFullScreen',
+				'webkitCurrentFullScreenElement',
+				'webkitCancelFullScreen',
+				'webkitfullscreenchange',
+				'webkitfullscreenerror'
+
+			],
+			[
+				'mozRequestFullScreen',
+				'mozCancelFullScreen',
+				'mozFullScreenElement',
+				'mozFullScreenEnabled',
+				'mozfullscreenchange',
+				'mozfullscreenerror'
+			],
+			[
+				'msRequestFullscreen',
+				'msExitFullscreen',
+				'msFullscreenElement',
+				'msFullscreenEnabled',
+				'MSFullscreenChange',
+				'MSFullscreenError'
+			]
+		];
+
+		var i = 0;
+		var l = fnMap.length;
+		var ret = {};
+
+		for (; i < l; i++) {
+			val = fnMap[i];
+			if (val && val[1] in document) {
+				for (i = 0, valLength = val.length; i < valLength; i++) {
+					ret[fnMap[0][i]] = val[i];
+				}
+				return ret;
+			}
+		}
+
+		return false;
+	})();
+
+	var screenfull = {
+		request: function (elem) {
+			var request = fn.requestFullscreen;
+
+			elem = elem || document.documentElement;
+
+			// Work around Safari 5.1 bug: reports support for
+			// keyboard in fullscreen even though it doesn't.
+			// Browser sniffing, since the alternative with
+			// setTimeout is even worse.
+			if (/5\.1[\.\d]* Safari/.test(navigator.userAgent)) {
+				elem[request]();
+			} else {
+				elem[request](keyboardAllowed && Element.ALLOW_KEYBOARD_INPUT);
+			}
+		},
+		exit: function () {
+			document[fn.exitFullscreen]();
+		},
+		toggle: function (elem) {
+			if (this.isFullscreen) {
+				this.exit();
+			} else {
+				this.request(elem);
+			}
+		},
+		raw: fn
+	};
+
+	if (!fn) {
+		if (isCommonjs) {
+			module.exports = false;
+		} else {
+			window.screenfull = false;
+		}
+
+		return;
+	}
+
+	Object.defineProperties(screenfull, {
+		isFullscreen: {
+			get: function () {
+				return !!document[fn.fullscreenElement];
+			}
+		},
+		element: {
+			enumerable: true,
+			get: function () {
+				return document[fn.fullscreenElement];
+			}
+		},
+		enabled: {
+			enumerable: true,
+			get: function () {
+				// Coerce to boolean in case of old WebKit
+				return !!document[fn.fullscreenEnabled];
+			}
+		}
+	});
+
+	if (isCommonjs) {
+		module.exports = screenfull;
+	} else {
+		window.screenfull = screenfull;
+	}
+})();
+
+},{}],5:[function(require,module,exports){
 
 module.exports = require('./lib/');
 
-},{"./lib/":5}],5:[function(require,module,exports){
+},{"./lib/":6}],6:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -3336,7 +3515,7 @@ exports.connect = lookup;
 exports.Manager = require('./manager');
 exports.Socket = require('./socket');
 
-},{"./manager":6,"./socket":8,"./url":9,"debug":13,"socket.io-parser":49}],6:[function(require,module,exports){
+},{"./manager":7,"./socket":9,"./url":10,"debug":14,"socket.io-parser":50}],7:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -3841,7 +4020,7 @@ Manager.prototype.onreconnect = function(){
   this.emitAll('reconnect', attempt);
 };
 
-},{"./on":7,"./socket":8,"./url":9,"backo2":10,"component-bind":11,"component-emitter":12,"debug":13,"engine.io-client":14,"indexof":45,"object-component":46,"socket.io-parser":49}],7:[function(require,module,exports){
+},{"./on":8,"./socket":9,"./url":10,"backo2":11,"component-bind":12,"component-emitter":13,"debug":14,"engine.io-client":15,"indexof":46,"object-component":47,"socket.io-parser":50}],8:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -3867,7 +4046,7 @@ function on(obj, ev, fn) {
   };
 }
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -4254,7 +4433,7 @@ Socket.prototype.disconnect = function(){
   return this;
 };
 
-},{"./on":7,"component-bind":11,"component-emitter":12,"debug":13,"has-binary":43,"socket.io-parser":49,"to-array":53}],9:[function(require,module,exports){
+},{"./on":8,"component-bind":12,"component-emitter":13,"debug":14,"has-binary":44,"socket.io-parser":50,"to-array":54}],10:[function(require,module,exports){
 (function (global){
 
 /**
@@ -4331,7 +4510,7 @@ function url(uri, loc){
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"debug":13,"parseuri":47}],10:[function(require,module,exports){
+},{"debug":14,"parseuri":48}],11:[function(require,module,exports){
 
 /**
  * Expose `Backoff`.
@@ -4418,7 +4597,7 @@ Backoff.prototype.setJitter = function(jitter){
 };
 
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /**
  * Slice reference.
  */
@@ -4443,7 +4622,7 @@ module.exports = function(obj, fn){
   }
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -4609,7 +4788,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 
 /**
  * Expose `debug()` as the module.
@@ -4748,11 +4927,11 @@ try {
   if (window.localStorage) debug.enable(localStorage.debug);
 } catch(e){}
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 
 module.exports =  require('./lib/');
 
-},{"./lib/":15}],15:[function(require,module,exports){
+},{"./lib/":16}],16:[function(require,module,exports){
 
 module.exports = require('./socket');
 
@@ -4764,7 +4943,7 @@ module.exports = require('./socket');
  */
 module.exports.parser = require('engine.io-parser');
 
-},{"./socket":16,"engine.io-parser":28}],16:[function(require,module,exports){
+},{"./socket":17,"engine.io-parser":29}],17:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -5473,7 +5652,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./transport":17,"./transports":18,"component-emitter":12,"debug":25,"engine.io-parser":28,"indexof":45,"parsejson":39,"parseqs":40,"parseuri":41}],17:[function(require,module,exports){
+},{"./transport":18,"./transports":19,"component-emitter":13,"debug":26,"engine.io-parser":29,"indexof":46,"parsejson":40,"parseqs":41,"parseuri":42}],18:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -5634,7 +5813,7 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-},{"component-emitter":12,"engine.io-parser":28}],18:[function(require,module,exports){
+},{"component-emitter":13,"engine.io-parser":29}],19:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies
@@ -5691,7 +5870,7 @@ function polling(opts){
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling-jsonp":19,"./polling-xhr":20,"./websocket":22,"xmlhttprequest":23}],19:[function(require,module,exports){
+},{"./polling-jsonp":20,"./polling-xhr":21,"./websocket":23,"xmlhttprequest":24}],20:[function(require,module,exports){
 (function (global){
 
 /**
@@ -5928,7 +6107,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":21,"component-inherit":24}],20:[function(require,module,exports){
+},{"./polling":22,"component-inherit":25}],21:[function(require,module,exports){
 (function (global){
 /**
  * Module requirements.
@@ -6316,7 +6495,7 @@ function unloadHandler() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":21,"component-emitter":12,"component-inherit":24,"debug":25,"xmlhttprequest":23}],21:[function(require,module,exports){
+},{"./polling":22,"component-emitter":13,"component-inherit":25,"debug":26,"xmlhttprequest":24}],22:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -6563,7 +6742,7 @@ Polling.prototype.uri = function(){
   return schema + '://' + this.hostname + port + this.path + query;
 };
 
-},{"../transport":17,"component-inherit":24,"debug":25,"engine.io-parser":28,"parseqs":40,"xmlhttprequest":23}],22:[function(require,module,exports){
+},{"../transport":18,"component-inherit":25,"debug":26,"engine.io-parser":29,"parseqs":41,"xmlhttprequest":24}],23:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -6803,7 +6982,7 @@ WS.prototype.check = function(){
   return !!WebSocket && !('__initialize' in WebSocket && this.name === WS.prototype.name);
 };
 
-},{"../transport":17,"component-inherit":24,"debug":25,"engine.io-parser":28,"parseqs":40,"ws":42}],23:[function(require,module,exports){
+},{"../transport":18,"component-inherit":25,"debug":26,"engine.io-parser":29,"parseqs":41,"ws":43}],24:[function(require,module,exports){
 // browser shim for xmlhttprequest module
 var hasCORS = require('has-cors');
 
@@ -6841,7 +7020,7 @@ module.exports = function(opts) {
   }
 }
 
-},{"has-cors":37}],24:[function(require,module,exports){
+},{"has-cors":38}],25:[function(require,module,exports){
 
 module.exports = function(a, b){
   var fn = function(){};
@@ -6849,7 +7028,7 @@ module.exports = function(a, b){
   a.prototype = new fn;
   a.prototype.constructor = a;
 };
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -6998,7 +7177,7 @@ function load() {
 
 exports.enable(load());
 
-},{"./debug":26}],26:[function(require,module,exports){
+},{"./debug":27}],27:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -7197,7 +7376,7 @@ function coerce(val) {
   return val;
 }
 
-},{"ms":27}],27:[function(require,module,exports){
+},{"ms":28}],28:[function(require,module,exports){
 /**
  * Helpers.
  */
@@ -7310,7 +7489,7 @@ function plural(ms, n, name) {
   return Math.ceil(ms / n) + ' ' + name + 's';
 }
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -7908,7 +8087,7 @@ exports.decodePayloadAsBinary = function (data, binaryType, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./keys":29,"after":30,"arraybuffer.slice":31,"base64-arraybuffer":32,"blob":33,"has-binary":34,"utf8":36}],29:[function(require,module,exports){
+},{"./keys":30,"after":31,"arraybuffer.slice":32,"base64-arraybuffer":33,"blob":34,"has-binary":35,"utf8":37}],30:[function(require,module,exports){
 
 /**
  * Gets the keys for an object.
@@ -7929,7 +8108,7 @@ module.exports = Object.keys || function keys (obj){
   return arr;
 };
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 module.exports = after
 
 function after(count, callback, err_cb) {
@@ -7959,7 +8138,7 @@ function after(count, callback, err_cb) {
 
 function noop() {}
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 /**
  * An abstraction for slicing an arraybuffer even when
  * ArrayBuffer.prototype.slice is not supported
@@ -7990,7 +8169,7 @@ module.exports = function(arraybuffer, start, end) {
   return result.buffer;
 };
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 /*
  * base64-arraybuffer
  * https://github.com/niklasvh/base64-arraybuffer
@@ -8051,7 +8230,7 @@ module.exports = function(arraybuffer, start, end) {
   };
 })("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 (function (global){
 /**
  * Create a blob builder even when vendor prefixes exist
@@ -8104,7 +8283,7 @@ module.exports = (function() {
 })();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 (function (global){
 
 /*
@@ -8166,12 +8345,12 @@ function hasBinary(data) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"isarray":35}],35:[function(require,module,exports){
+},{"isarray":36}],36:[function(require,module,exports){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 (function (global){
 /*! http://mths.be/utf8js v2.0.0 by @mathias */
 ;(function(root) {
@@ -8414,7 +8593,7 @@ module.exports = Array.isArray || function (arr) {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -8439,7 +8618,7 @@ try {
   module.exports = false;
 }
 
-},{"global":38}],38:[function(require,module,exports){
+},{"global":39}],39:[function(require,module,exports){
 
 /**
  * Returns `this`. Execute this without a "context" (i.e. without it being
@@ -8449,7 +8628,7 @@ try {
 
 module.exports = (function () { return this; })();
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 (function (global){
 /**
  * JSON parse.
@@ -8484,7 +8663,7 @@ module.exports = function parsejson(data) {
   }
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 /**
  * Compiles a querystring
  * Returns string representation of the object
@@ -8523,7 +8702,7 @@ exports.decode = function(qs){
   return qry;
 };
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -8564,7 +8743,7 @@ module.exports = function parseuri(str) {
     return uri;
 };
 
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -8609,7 +8788,7 @@ function ws(uri, protocols, opts) {
 
 if (WebSocket) ws.prototype = WebSocket.prototype;
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 (function (global){
 
 /*
@@ -8671,9 +8850,9 @@ function hasBinary(data) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"isarray":44}],44:[function(require,module,exports){
-arguments[4][35][0].apply(exports,arguments)
-},{"dup":35}],45:[function(require,module,exports){
+},{"isarray":45}],45:[function(require,module,exports){
+arguments[4][36][0].apply(exports,arguments)
+},{"dup":36}],46:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -8684,7 +8863,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 
 /**
  * HOP ref.
@@ -8769,7 +8948,7 @@ exports.length = function(obj){
 exports.isEmpty = function(obj){
   return 0 == exports.length(obj);
 };
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -8796,7 +8975,7 @@ module.exports = function parseuri(str) {
   return uri;
 };
 
-},{}],48:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 (function (global){
 /*global Blob,File*/
 
@@ -8941,7 +9120,7 @@ exports.removeBlobs = function(data, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./is-buffer":50,"isarray":51}],49:[function(require,module,exports){
+},{"./is-buffer":51,"isarray":52}],50:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -9343,7 +9522,7 @@ function error(data){
   };
 }
 
-},{"./binary":48,"./is-buffer":50,"component-emitter":12,"debug":13,"isarray":51,"json3":52}],50:[function(require,module,exports){
+},{"./binary":49,"./is-buffer":51,"component-emitter":13,"debug":14,"isarray":52,"json3":53}],51:[function(require,module,exports){
 (function (global){
 
 module.exports = isBuf;
@@ -9360,9 +9539,9 @@ function isBuf(obj) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],51:[function(require,module,exports){
-arguments[4][35][0].apply(exports,arguments)
-},{"dup":35}],52:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
+arguments[4][36][0].apply(exports,arguments)
+},{"dup":36}],53:[function(require,module,exports){
 /*! JSON v3.2.6 | http://bestiejs.github.io/json3 | Copyright 2012-2013, Kit Cambridge | http://kit.mit-license.org */
 ;(function (window) {
   // Convenience aliases.
@@ -10225,7 +10404,7 @@ arguments[4][35][0].apply(exports,arguments)
   }
 }(this));
 
-},{}],53:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 module.exports = toArray
 
 function toArray(list, index) {
@@ -10240,7 +10419,7 @@ function toArray(list, index) {
     return array
 }
 
-},{}],54:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 var SonicSocket = require('./sonic-socket.js');
 var SonicServer = require('./sonic-server.js');
 var SonicCoder = require('./sonic-coder.js');
@@ -10251,7 +10430,7 @@ module.exports = {
   SonicCoder: SonicCoder
 }
 
-},{"./sonic-coder.js":56,"./sonic-server.js":57,"./sonic-socket.js":58}],55:[function(require,module,exports){
+},{"./sonic-coder.js":57,"./sonic-server.js":58,"./sonic-socket.js":59}],56:[function(require,module,exports){
 function RingBuffer(maxLength) {
   this.array = [];
   this.maxLength = maxLength;
@@ -10302,7 +10481,7 @@ RingBuffer.prototype.remove = function(index, length) {
 
 module.exports = RingBuffer;
 
-},{}],56:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 /**
  * A simple sonic encoder/decoder for [a-z0-9] => frequency (and back).
  * A way of representing characters with frequency.
@@ -10365,7 +10544,7 @@ SonicCoder.prototype.freqToChar = function(freq) {
 
 module.exports = SonicCoder;
 
-},{}],57:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 var RingBuffer = require('./ring-buffer.js');
 var SonicCoder = require('./sonic-coder.js');
 
@@ -10657,7 +10836,7 @@ SonicServer.prototype.restart = function() {
 
 module.exports = SonicServer;
 
-},{"./ring-buffer.js":55,"./sonic-coder.js":56}],58:[function(require,module,exports){
+},{"./ring-buffer.js":56,"./sonic-coder.js":57}],59:[function(require,module,exports){
 var SonicCoder = require('./sonic-coder.js');
 
 var audioContext = window.audioContext || new AudioContext();
@@ -10719,4 +10898,4 @@ SonicSocket.prototype.scheduleToneAt = function(freq, startTime, duration) {
 
 module.exports = SonicSocket;
 
-},{"./sonic-coder.js":56}]},{},[1]);
+},{"./sonic-coder.js":57}]},{},[1]);
