@@ -13,11 +13,11 @@
   "author": "Ole Michelsen",
   "license": "MIT",
   "dependencies": {
-    "screenfull": "^2.0.0",
-    "socket.io-client": "^1.3.5",
+    "screenfull": "^3.3.2",
+    "socket.io-client": "^2.1.1",
     "sonicnet.js": "omichelsen/sonicnet.js"
   },
   "devDependencies": {
-    "copyfiles": "^0.2.1"
+    "copyfiles": "^2.0.0"
   }
 }
